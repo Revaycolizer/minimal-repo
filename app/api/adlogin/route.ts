@@ -1,8 +1,12 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse,type NextRequest } from "next/server";
 import prisma from "@/prisma/client";
 import { serialize } from "cookie";
 import {setCookie} from 'cookies-next'
 import { cookies } from 'next/headers'
+import jwt from 'jsonwebtoken';
+import { COOKIE_NAME } from "@/app/constants/cookie";
+import { sign } from "jsonwebtoken";
+import { verify } from "jsonwebtoken";
 
 export async function POST(req: NextRequest, res: NextResponse) {
   try {
@@ -39,10 +43,14 @@ export async function POST(req: NextRequest, res: NextResponse) {
       role:user.role
     };
 
+    const MAX_AGE = 60 * 60 * 24 * 30;
     const oneDay = 24 * 60 * 60 * 1000
 
   const cookieStore = cookies()
   
+  const token = jwt.sign(sessionData, 'HS256', {
+      expiresIn: '30d' // Set the expiration time of the token
+    });
 
     const sessionToken = JSON.stringify(sessionData);
 
@@ -64,12 +72,21 @@ export async function POST(req: NextRequest, res: NextResponse) {
     cookies().set({name:'userToken', value: responseData.cookValue,  maxAge: 60 * 60 * 24 * 30 ,secure:false,httpOnly:false})
     const authorization = cookieStore.get('userToken')
   console.log(authorization)
-    
+  const seralized = serialize(COOKIE_NAME, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: MAX_AGE,
+    path: "/",
+  });
     // Return the combined response
-    return new NextResponse(JSON.stringify(responseData), {
+    const response = {
+      message: "Authenticated!",
+    };
+  
+    return new Response(JSON.stringify(response), {
       status: 200,
-      headers: {
-         'Set-Cookie': cookValue, },
+      headers: { "Set-Cookie": seralized },
     });
 
     // return NextResponse.json(user);
@@ -80,25 +97,60 @@ export async function POST(req: NextRequest, res: NextResponse) {
 }
 
 
-export async function GET(req: NextRequest, res: NextResponse) {
+export async function GET(req: Request, res: NextResponse) {
+ 
+    // const cookieStore = cookies()
+  //   const authorization = cookieStore.get('user')
+  //   const i = cookieStore.get('userToken')
+  //  const user = JSON.parse(authorization!.value)
+
+
+   const cookieStore = cookies();
+
+  const token = cookieStore.get(COOKIE_NAME);
+
+  if (!token) {
+    return NextResponse.json(
+      {
+        message: "Unauthorized",
+      },
+      {
+        status: 401,
+      }
+    );
+  }
+
+  const { value } = token;
+
+  // Always check this
+  // const secret = process.env.JWT_SECRET || "";
+
   try {
-    const cookieStore = cookies()
-    const authorization = cookieStore.get('userToken')
-    const i = cookieStore.get('userToken')
-   const user = JSON.parse(authorization!.value)
+    verify(value, 'HS256');
 
-   const a = req.cookies.get('userToken')
+    const response = {
+      user: "Super Top Secret User",
+    };
 
-    if (authorization) {
-      console.log(authorization)
-      console.log(i)
-      console.log(a)
-      console.log(new Headers(req.headers))
-      return NextResponse.json(authorization)
+    return new Response(JSON.stringify(response), {
+      status: 200,
+    });
+  //  const a = req.cookies.get('userToken')
+
+  //  const a = req.cookies.get('userToken')
+
+    // if (cookieStore) {
+    //   console.log(authorization)
+    //   console.log(i)
+      // console.log(a)
+      // console.log(new Headers(req.headers))
+      // return new Response('yoo',{ status: 200,
+      //   headers : {'set-cookie': `token=${authorization!.value}`}
+      //   })
     
-    } else {
-      return new NextResponse("User token not found", { status: 404 });
-    }
+    // } else {
+    //   return new NextResponse("User token not found", { status: 404 });
+    // }
   } catch (error) {
     console.error("Error retrieving user token:", error);
     return new NextResponse("Internal Error", { status: 500 });
