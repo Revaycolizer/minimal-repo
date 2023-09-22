@@ -88,6 +88,6 @@ export async function GET(req:Request,res:Response){
 
 
   }catch(error){
-
+       console.error(error);
   }
 }
