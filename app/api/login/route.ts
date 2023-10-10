@@ -86,7 +86,13 @@ export async function POST(req: NextRequest, res: NextResponse) {
   
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { "Set-Cookie": seralized },
+      headers: { 
+        'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      "Content-Type": "application/json" ,
+        "Set-Cookie": seralized 
+      },
     });
 
    
