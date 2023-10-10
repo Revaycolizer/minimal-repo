@@ -102,6 +102,9 @@ export async function POST(req: NextRequest, res: NextResponse) {
   }
 }
 
+export async function OPTIONS(req:Request){
+return new Response('Successfully',{status:200})
+}
 
 export async function GET(req: Request, res: NextResponse) {
   const cookieStore = cookies();
