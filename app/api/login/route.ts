@@ -103,7 +103,12 @@ export async function POST(req: NextRequest, res: NextResponse) {
 }
 
 export async function OPTIONS(req:Request){
-return new Response('Successfully',{status:200})
+return new Response('Successfully',{status:200, headers: { 
+  'Access-Control-Allow-Origin': '*',
+'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+"Content-Type": "application/json" ,
+},})
 }
 
 export async function GET(req: Request, res: NextResponse) {
